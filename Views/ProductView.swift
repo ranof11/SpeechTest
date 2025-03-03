@@ -12,25 +12,20 @@ struct ProductView: View {
     @ObservedObject var speechRecognizer = SpeechRecognizer()
     
     @State private var showWarning = false
+    @State private var currentListType: String? = nil
     
     var body: some View {
         VStack(spacing: 20) {
-            Text("Top Selling Products")
+            Text("ABC Products")
                 .font(.title)
             
-            // List of top products
-            List(productVM.topProducts) { product in
-                HStack {
-                    Text(product.name)
-                    Spacer()
-                    Text("\(product.sales) sales")
-                }
+            if currentListType == nil {
+                Text("All Products").font(.headline)
+            } else {
+                Text("\(currentListType!.capitalized) Products").font(.headline)
             }
             
-            Text("Least selling products")
-                .font(.title)
-            
-            List(productVM.bottomProducts) { product in
+            List(productVM.displayedProducts) { product in
                 HStack {
                     Text(product.name)
                     Spacer()
@@ -57,16 +52,31 @@ struct ProductView: View {
                 }
             }
             
-            // Voice command button
-            Button {
-                handleVoiceCommand()
-            } label: {
-                Text(speechRecognizer.isListening ? "Stop Listening" : "Start Voice Command")
-                    .padding()
-                    .background(speechRecognizer.isListening ? Color.red : Color.blue)
-                    .foregroundStyle(.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
+            HStack(spacing: 10) {
+                Button {
+                    productVM.resetProducts()
+                    currentListType = nil
+                } label: {
+                    Text("Show All Products")
+                        .frame(maxWidth: .infinity, minHeight: 50)
+                        .padding()
+                        .background(Color.gray.opacity(0.2))
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                }
+
+                Button {
+                    handleVoiceCommand()
+                } label: {
+                    Text(speechRecognizer.isListening ? "Stop Listening" : "Start Voice Command")
+                        .frame(maxWidth: .infinity, minHeight: 50)
+                        .padding()
+                        .background(speechRecognizer.isListening ? Color.red : Color.blue)
+                        .foregroundStyle(.white)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                }
             }
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal)
         }
         .padding()
     }
@@ -85,11 +95,8 @@ struct ProductView: View {
     
     private func processCommand(_ command: String) {
         let lowercasedCommand = command.lowercased()
-        
-        // Convert words like "three" to "3"
         let convertedCommand = convertNumberWordsToDigits(lowercasedCommand)
         
-        // Match patterns like "top 3" or "top 5 products"
         let pattern = "(top|bottom).*?(\\d+)"
         guard let regex = try? NSRegularExpression(pattern: pattern) else { return }
         
@@ -97,15 +104,19 @@ struct ProductView: View {
             in: convertedCommand,
             range: NSRange(convertedCommand.startIndex..., in: convertedCommand)
         ),
-           let range = Range(match.range(at: 1), in: convertedCommand),
-           let number = Int(String(convertedCommand[range])) {
+           let keywordRange = Range(match.range(at: 1), in: convertedCommand),
+           let numberRange = Range(match.range(at: 2), in: convertedCommand),
+           let number = Int(String(convertedCommand[numberRange])) {
             
-            // Show up to the available number of products
+            let keyword = String(convertedCommand[keywordRange]) // "top" or "bottom"
+            
             let count = min(number, productVM.products.count)
-            productVM.fetchTopProducts(count: count)
+            currentListType = keyword
+            productVM.fetchProducts(type: keyword, count: count)
+            
             showWarning = false
         } else {
-            showWarning = true // Show warning if no number found
+            showWarning = true
         }
     }
     

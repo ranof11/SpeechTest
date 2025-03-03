@@ -17,20 +17,19 @@ class ProductViewModel: ObservableObject {
         Product(name: "Product E", sales: 120)
     ]
     
-    @Published var topProducts: [Product] = []
-    @Published var bottomProducts: [Product] = []
+    @Published var displayedProducts: [Product] = []
     
-    func fetchTopProducts(count: Int) {
-        // Sort by sales descending and take the top 'count' products
-        topProducts = products.sorted { $0.sales > $1.sales }
-            .prefix(count)
-            .map { $0 }
+    init() {
+        displayedProducts = products
     }
     
-    func fetchBottomProducts(count: Int) {
-        bottomProducts = products.sorted { $0.sales < $1.sales }
-            .prefix(count)
-            .map { $0 }
+    func fetchProducts(type: String, count: Int) {
+        let sortedProducts = products.sorted { type == "top" ? $0.sales > $1.sales : $0.sales < $1.sales }
+        displayedProducts = Array(sortedProducts.prefix(count))
+    }
+    
+    func resetProducts() {
+        displayedProducts = products
     }
 }
 
