@@ -39,6 +39,11 @@
 			path = Views;
 			sourceTree = "<group>";
 		};
+		D9CB44522D75652F003F7EE4 /* Services */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Services;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -55,6 +60,7 @@
 		D90BAE7E2D716E4E00E86B5A = {
 			isa = PBXGroup;
 			children = (
+				D9CB44522D75652F003F7EE4 /* Services */,
 				D90BAEA02D71772500E86B5A /* Views */,
 				D90BAE9E2D7173D000E86B5A /* Model */,
 				D90BAE892D716E4E00E86B5A /* SpeechTest */,
@@ -89,6 +95,7 @@
 				D90BAE892D716E4E00E86B5A /* SpeechTest */,
 				D90BAE9E2D7173D000E86B5A /* Model */,
 				D90BAEA02D71772500E86B5A /* Views */,
+				D9CB44522D75652F003F7EE4 /* Services */,
 			);
 			name = SpeechTest;
 			packageProductDependencies = (
