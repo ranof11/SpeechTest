@@ -10,22 +10,22 @@ import SwiftUI
 struct ProductView: View {
     @ObservedObject var productVM = ProductViewModel()
     @ObservedObject var speechVM = SpeechViewModel()
-
+    
     @State private var showWarning = false
     @State private var currentListType: String? = nil
-
+    
     var body: some View {
         VStack(spacing: 20) {
             Text("ABC Products")
                 .font(.title)
-
+            
             Text(currentListTitle)
                 .font(.headline)
-
+            
             ProductListView(products: productVM.displayedProducts)
-
+            
             VoiceFeedbackView(speechVM: speechVM, showWarning: $showWarning)
-
+            
             ActionButtons(
                 resetAction: resetProducts,
                 voiceCommandAction: handleVoiceCommand,
@@ -34,16 +34,16 @@ struct ProductView: View {
         }
         .padding()
     }
-
+    
     private var currentListTitle: String {
         currentListType?.capitalized.appending(" Products") ?? "All Products"
     }
-
+    
     private func resetProducts() {
         productVM.resetProducts()
         currentListType = nil
     }
-
+    
     private func handleVoiceCommand() {
         if speechVM.isListening {
             speechVM.stopRecording()
@@ -55,13 +55,25 @@ struct ProductView: View {
             speechVM.startRecording()
         }
     }
-
+    
+    // In ProductView struct
     private func processCommand(_ command: String) {
         let (type, count, month, year) = CommandProcessor.parse(command)
-
-        if let type = type, let count = count {
+        
+        if let type = type, type == "all" {
+            // Handle "all" with optional month/year
+            productVM.fetchProducts(type: nil, count: nil, month: month, year: year)
+            currentListType = "all"
+            showWarning = false
+        } else if let type = type, let count = count {
+            // Original top/bottom case
             productVM.fetchProducts(type: type, count: count, month: month, year: year)
             currentListType = type
+            showWarning = false
+        } else if month != nil || year != nil {
+            // Handle standalone month/year filters (NEW)
+            productVM.fetchProducts(type: nil, count: nil, month: month, year: year)
+            currentListType = "filtered"
             showWarning = false
         } else {
             showWarning = true
@@ -71,7 +83,7 @@ struct ProductView: View {
 
 struct ProductListView: View {
     let products: [Product]
-
+    
     var body: some View {
         List(products) { product in
             HStack {
@@ -89,7 +101,7 @@ struct ProductListView: View {
 struct VoiceFeedbackView: View {
     @ObservedObject var speechVM: SpeechViewModel
     @Binding var showWarning: Bool
-
+    
     var body: some View {
         VStack {
             if speechVM.isListening {
@@ -98,11 +110,11 @@ struct VoiceFeedbackView: View {
                 Text("Listening...")
                     .foregroundStyle(.gray)
             }
-
+            
             Text("Transcribed: \(speechVM.transcribedText)")
                 .padding()
                 .background(Color.gray.opacity(0.1))
-
+            
             if showWarning {
                 Text("Please say a number after 'top'")
                     .foregroundStyle(.red)
@@ -115,7 +127,7 @@ struct ActionButtons: View {
     let resetAction: () -> Void
     let voiceCommandAction: () -> Void
     let isListening: Bool
-
+    
     var body: some View {
         HStack(spacing: 10) {
             Button(action: resetAction) {
@@ -125,7 +137,7 @@ struct ActionButtons: View {
                     .background(Color.gray.opacity(0.2))
                     .clipShape(RoundedRectangle(cornerRadius: 8))
             }
-
+            
             Button(action: voiceCommandAction) {
                 Text(isListening ? "Stop Listening" : "Start Voice Command")
                     .frame(maxWidth: .infinity, minHeight: 50)
@@ -144,40 +156,94 @@ class CommandProcessor {
     static func parse(_ command: String) -> (String?, Int?, Int?, Int?) {
         let lowercasedCommand = command.lowercased()
         let convertedCommand = convertNumberWordsToDigits(lowercasedCommand)
-
-        let pattern = "(top|bottom).*?(\\d+)(?:.*?(january|february|march|april|may|june|july|august|september|october|november|december))?(?:.*?(\\d{4}))?"
-        guard let regex = try? NSRegularExpression(pattern: pattern) else { return (nil, nil, nil, nil) }
-
-        if let match = regex.firstMatch(
-            in: convertedCommand,
-            range: NSRange(convertedCommand.startIndex..., in: convertedCommand)
-        ),
-           let keywordRange = Range(match.range(at: 1), in: convertedCommand),
-           let numberRange = Range(match.range(at: 2), in: convertedCommand),
-           let number = Int(String(convertedCommand[numberRange])) {
-
-            let keyword = String(convertedCommand[keywordRange]) // "top" or "bottom"
-            var month: Int? = nil
-            var year: Int? = nil
-
-            if let monthRange = Range(match.range(at: 3), in: convertedCommand) {
-                let monthString = String(convertedCommand[monthRange]).lowercased()
-                let months = [
-                    "january": 1, "february": 2, "march": 3, "april": 4,
-                    "may": 5, "june": 6, "july": 7, "august": 8,
-                    "september": 9, "october": 10, "november": 11, "december": 12
-                ]
-                month = months[monthString]
-            }
-
-            if let yearRange = Range(match.range(at: 4), in: convertedCommand) {
-                year = Int(String(convertedCommand[yearRange]))
-            }
-
-            return (keyword, number, month, year)
+        
+        // 1. Check for top/bottom commands
+        if let (type, count, month, year) = parseTopBottom(command: convertedCommand) {
+            return (type, count, month, year)
         }
-
+        
+        // 2. Check for "all" commands
+        if let (month, year) = parseAll(command: convertedCommand) {
+            return ("all", nil, month, year)
+        }
+        
+        // 3. Check for standalone month/year (NEW)
+        if let (month, year) = parseMonthYear(command: convertedCommand) {
+            return (nil, nil, month, year)
+        }
+        
         return (nil, nil, nil, nil)
+    }
+    
+    private static func parseTopBottom(command: String) -> (String?, Int?, Int?, Int?)? {
+        let pattern = "(top|bottom).*?(\\d+)(?:.*?(january|february|march|april|may|june|july|august|september|october|november|december))?(?:.*?(\\d{4}))?"
+        guard let match = firstMatch(for: pattern, in: command) else { return nil }
+        
+        let keyword = match[1]
+        guard let number = Int(match[2] ?? "") else { return nil }
+        let month = monthNumber(for: match[3])
+        let year = Int(match[4] ?? "")
+        
+        return (keyword, number, month, year)
+    }
+    
+    private static func parseAll(command: String) -> (Int?, Int?)? {
+        // Updated regex to handle "all [products] in <month> [year]"
+        let pattern = "all.*?(january|february|march|april|may|june|july|august|september|october|november|december)?(?:.*?(\\d{4}))?"
+        guard let match = firstMatch(for: pattern, in: command) else { return nil }
+        
+        let month = monthNumber(for: match[1])
+        let year = Int(match[2] ?? "")
+        return (month, year)
+    }
+    
+    // In CommandProcessor class
+    private static func parseMonthYear(command: String) -> (Int?, Int?)? {
+        // Match patterns like "january 2024" or "2024 january"
+        let pattern = "(january|february|march|april|may|june|july|august|september|october|november|december)\\s*(\\d{4})|(\\d{4})\\s*(january|february|march|april|may|june|july|august|september|october|november|december)"
+        guard let match = firstMatch(for: pattern, in: command) else { return nil }
+        
+        var month: Int?
+        var year: Int?
+        
+        // Check both possible group combinations
+        if let monthStr = match[1] {
+            month = monthNumber(for: monthStr)
+            year = Int(match[2] ?? "")
+        } else if let yearStr = match[3], let monthStr = match[4] {
+            month = monthNumber(for: monthStr)
+            year = Int(yearStr)
+        }
+        
+        return (month, year)
+    }
+    
+    private static func firstMatch(for pattern: String, in text: String) -> [String?]? {
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive) else { return nil }
+        let range = NSRange(text.startIndex..., in: text)
+        guard let match = regex.firstMatch(in: text, range: range) else { return nil }
+        
+        var groups: [String?] = []
+        for i in 0..<match.numberOfRanges {
+            let groupRange = match.range(at: i)
+            if groupRange.location == NSNotFound {
+                groups.append(nil)
+            } else {
+                let substring = String(text[Range(groupRange, in: text)!])
+                groups.append(substring)
+            }
+        }
+        return groups
+    }
+    
+    private static func monthNumber(for monthString: String?) -> Int? {
+        guard let monthString = monthString?.lowercased() else { return nil }
+        let months = [
+            "january": 1, "february": 2, "march": 3, "april": 4,
+            "may": 5, "june": 6, "july": 7, "august": 8,
+            "september": 9, "october": 10, "november": 11, "december": 12
+        ]
+        return months[monthString]
     }
 }
 
