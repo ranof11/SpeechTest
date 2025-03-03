@@ -188,13 +188,26 @@ class CommandProcessor {
     }
     
     private static func parseAll(command: String) -> (Int?, Int?)? {
-        // Updated regex to handle "all [products] in <month> [year]"
-        let pattern = "all.*?(january|february|march|april|may|june|july|august|september|october|november|december)?(?:.*?(\\d{4}))?"
+        // Updated regex to handle "all products in <month> <year>" and "all products in <year>"
+        let pattern = "all.*?(january|february|march|april|may|june|july|august|september|october|november|december)?\\s*(\\d{4})|(\\d{4})\\s*(january|february|march|april|may|june|july|august|september|october|november|december)?"
         guard let match = firstMatch(for: pattern, in: command) else { return nil }
         
+        // Attempt to capture the month and year
         let month = monthNumber(for: match[1])
-        let year = Int(match[2] ?? "")
-        return (month, year)
+        let year = Int(match[2] ?? "") ?? Int(match[3] ?? "")
+        
+        // If we have only the year, allow filtering by year
+        if month == nil && year != nil {
+            return (nil, year)
+        }
+        
+        // If we have both month and year, return them
+        if month != nil && year != nil {
+            return (month, year)
+        }
+        
+        // Return nil if neither is found (not a valid "all" command)
+        return nil
     }
     
     // In CommandProcessor class
