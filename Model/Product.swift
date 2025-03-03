@@ -11,4 +11,5 @@ struct Product: Identifiable {
     let id = UUID()
     let name: String
     let sales: Int
+    let date: Date
 }
