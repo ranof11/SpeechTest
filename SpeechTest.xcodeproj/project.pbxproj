@@ -10,10 +10,33 @@
 		D90BAE872D716E4E00E86B5A /* SpeechTest.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SpeechTest.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		D90BAE992D716EAD00E86B5A /* Exceptions for "SpeechTest" folder in "SpeechTest" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = D90BAE862D716E4E00E86B5A /* SpeechTest */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		D90BAE892D716E4E00E86B5A /* SpeechTest */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				D90BAE992D716EAD00E86B5A /* Exceptions for "SpeechTest" folder in "SpeechTest" target */,
+			);
 			path = SpeechTest;
+			sourceTree = "<group>";
+		};
+		D90BAE9E2D7173D000E86B5A /* Model */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Model;
+			sourceTree = "<group>";
+		};
+		D90BAEA02D71772500E86B5A /* Views */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Views;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -32,6 +55,8 @@
 		D90BAE7E2D716E4E00E86B5A = {
 			isa = PBXGroup;
 			children = (
+				D90BAEA02D71772500E86B5A /* Views */,
+				D90BAE9E2D7173D000E86B5A /* Model */,
 				D90BAE892D716E4E00E86B5A /* SpeechTest */,
 				D90BAE882D716E4E00E86B5A /* Products */,
 			);
@@ -62,6 +87,8 @@
 			);
 			fileSystemSynchronizedGroups = (
 				D90BAE892D716E4E00E86B5A /* SpeechTest */,
+				D90BAE9E2D7173D000E86B5A /* Model */,
+				D90BAEA02D71772500E86B5A /* Views */,
 			);
 			name = SpeechTest;
 			packageProductDependencies = (
@@ -255,6 +282,9 @@
 				DEVELOPMENT_TEAM = FQKMQV25PZ;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = SpeechTest/Info.plist;
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Allow this app to use mic";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Allow this app to use mic";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -284,6 +314,9 @@
 				DEVELOPMENT_TEAM = FQKMQV25PZ;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = SpeechTest/Info.plist;
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Allow this app to use mic";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Allow this app to use mic";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
